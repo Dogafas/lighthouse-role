@@ -1,0 +1,37 @@
+---
+- name: Install nginx and unzip
+  apt:
+    name:
+      - nginx
+      - unzip
+    state: present
+    update_cache: yes
+
+- name: Download Lighthouse archive
+  get_url:
+    url: "{{ lighthouse_repo_url }}"
+    dest: "/tmp/lighthouse.zip"
+
+- name: Unarchive Lighthouse
+  unarchive:
+    src: "/tmp/lighthouse.zip"
+    dest: "{{ lighthouse_install_dir }}"
+    remote_src: yes
+
+- name: Configure nginx for Lighthouse
+  template:
+    src: lighthouse.conf.j2
+    dest: "{{ lighthouse_nginx_conf }}"
+    mode: "0644"
+  notify: Restart nginx
+
+- name: Remove default nginx config
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Ensure nginx is running
+  service:
+    name: nginx
+    state: started
+    enabled: true
